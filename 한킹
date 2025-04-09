@@ -1,0 +1,2117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한글킹제임스성경 검색기</title>
+    <style>
+        @font-face {
+            font-family: 'GmarketSansMedium';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'GmarketSansMedium', sans-serif;
+        }
+        
+        body {
+            display: flex;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background-color: #f0f0f0;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .book-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .books-gap {
+            grid-column: 1 / span 3;
+            height: 10px;
+        }
+        
+        .chapter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .chapter-row {
+            display: flex;
+            width: 100%;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        
+        button {
+            padding: 5px;
+            background-color: #e0e0e0;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background-color: #d0d0d0;
+        }
+        
+        button.active {
+            background-color: #bbb;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .search-container {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        
+        .search-btn, .copy-btn {
+            padding: 10px 15px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .output-container {
+            flex: 1;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background-color: white;
+            padding: 15px;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .output-content {
+            white-space: pre-wrap;
+            user-select: text;
+            cursor: text;
+        }
+        
+        .output-content p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .reference {
+            color: #4285f4;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .highlight {
+            background-color: yellow;
+        }
+        
+        .verse-highlight {
+            background-color: yellow;
+            font-weight: bold;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        
+        .nav-btn {
+            padding: 8px 15px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .history-stack {
+            display: none;
+        }
+        
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #4285f4;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="book-buttons">
+            <!-- 성경 권 버튼들이 여기에 동적으로 추가됨 -->
+        </div>
+        <div class="chapter-buttons">
+            <!-- 장 버튼들이 여기에 동적으로 추가됨 -->
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="header">
+            <h1>한글킹제임스성경 검색기</h1>
+        </div>
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="검색어나 성경 구절을 입력하세요 (예: '하나님' 또는 '창 1:1')" disabled>
+            <button class="search-btn" disabled>검색</button>
+            <button class="copy-btn" disabled>복사</button>
+        </div>
+        <div class="output-container">
+            <div class="output-content">
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <p>성경 데이터를 불러오는 중입니다...</p>
+                </div>
+            </div>
+            <div class="navigation">
+                <button class="nav-btn prev-btn" style="display: none;">이전</button>
+                <button class="nav-btn next-btn" style="display: none;">다음</button>
+            </div>
+        </div>
+    </div>
+    <div class="history-stack"></div>
+
+    <script>
+        // 성경 데이터 구조
+        let bibleData = {};
+        
+        // 현재 상태 관리
+        let currentMode = ""; // "read" 또는 "search"
+        let currentBook = "";
+        let currentChapter = 0;
+        let historyStack = [];
+        let currentHistoryIndex = -1;
+        
+        // DOM 요소
+        const sidebar = document.querySelector('.sidebar');
+        const bookButtons = document.querySelector('.book-buttons');
+        const chapterButtons = document.querySelector('.chapter-buttons');
+        const searchInput = document.querySelector('.search-input');
+        const searchBtn = document.querySelector('.search-btn');
+        const copyBtn = document.querySelector('.copy-btn');
+        const outputContent = document.querySelector('.output-content');
+        const prevBtn = document.querySelector('.prev-btn');
+        const nextBtn = document.querySelector('.next-btn');
+        
+        // 성경책 정보
+        const bibleBooks = [
+            // 구약
+            {code: "창", name: "창세기", chapters: 50},
+            {code: "출", name: "출애굽기", chapters: 40},
+            {code: "레", name: "레위기", chapters: 27},
+            {code: "민", name: "민수기", chapters: 36},
+            {code: "신", name: "신명기", chapters: 34},
+            {code: "수", name: "여호수아", chapters: 24},
+            {code: "판", name: "재판관기", chapters: 21},
+            {code: "룻", name: "룻기", chapters: 4},
+            {code: "삼상", name: "사무엘상", chapters: 31},
+            {code: "삼하", name: "사무엘하", chapters: 24},
+            {code: "왕상", name: "열왕기상", chapters: 22},
+            {code: "왕하", name: "열왕기하", chapters: 25},
+            {code: "대상", name: "역대기상", chapters: 29},
+            {code: "대하", name: "역대기하", chapters: 36},
+            {code: "스", name: "에스라", chapters: 10},
+            {code: "느", name: "느헤미야", chapters: 13},
+            {code: "에", name: "에스더", chapters: 10},
+            {code: "욥", name: "욥기", chapters: 42},
+            {code: "시", name: "시편", chapters: 150},
+            {code: "잠", name: "잠언", chapters: 31},
+            {code: "전", name: "전도서", chapters: 12},
+            {code: "솔", name: "솔로몬의 노래", chapters: 8},
+            {code: "사", name: "이사야", chapters: 66},
+            {code: "렘", name: "예레미야", chapters: 52},
+            {code: "애", name: "예레미야애가", chapters: 5},
+            {code: "겔", name: "에스겔", chapters: 48},
+            {code: "단", name: "다니엘", chapters: 12},
+            {code: "호", name: "호세아", chapters: 14},
+            {code: "욜", name: "요엘", chapters: 3},
+            {code: "암", name: "아모스", chapters: 9},
+            {code: "옵", name: "오바댜", chapters: 1},
+            {code: "욘", name: "요나", chapters: 4},
+            {code: "미", name: "미가", chapters: 7},
+            {code: "나", name: "나훔", chapters: 3},
+            {code: "합", name: "하박국", chapters: 3},
+            {code: "슾", name: "스파냐", chapters: 3},
+            {code: "학", name: "학개", chapters: 2},
+            {code: "슼", name: "스카랴", chapters: 14},
+            {code: "말", name: "말라키", chapters: 4},
+            // 신약
+            {code: "마", name: "마태복음", chapters: 28},
+            {code: "막", name: "마가복음", chapters: 16},
+            {code: "눅", name: "누가복음", chapters: 24},
+            {code: "요", name: "요한복음", chapters: 21},
+            {code: "행", name: "사도행전", chapters: 28},
+            {code: "롬", name: "로마서", chapters: 16},
+            {code: "고전", name: "고린도전서", chapters: 16},
+            {code: "고후", name: "고린도후서", chapters: 13},
+            {code: "갈", name: "갈라디아서", chapters: 6},
+            {code: "엡", name: "에베소서", chapters: 6},
+            {code: "빌", name: "빌립보서", chapters: 4},
+            {code: "골", name: "골로새서", chapters: 4},
+            {code: "살전", name: "데살로니가전서", chapters: 5},
+            {code: "살후", name: "데살로니가후서", chapters: 3},
+            {code: "딤전", name: "디모데전서", chapters: 6},
+            {code: "딤후", name: "디모데후서", chapters: 4},
+            {code: "딛", name: "디도서", chapters: 3},
+            {code: "몬", name: "빌레몬서", chapters: 1},
+            {code: "히", name: "히브리서", chapters: 13},
+            {code: "약", name: "야고보서", chapters: 5},
+            {code: "벧전", name: "베드로전서", chapters: 5},
+            {code: "벧후", name: "베드로후서", chapters: 3},
+            {code: "요일", name: "요한일서", chapters: 5},
+            {code: "요이", name: "요한이서", chapters: 1},
+            {code: "요삼", name: "요한삼서", chapters: 1},
+            {code: "유", name: "유다서", chapters: 1},
+            {code: "계", name: "요한계시록", chapters: 22}
+        ];
+        
+        // 코드로 책 검색
+        function getBookByCode(code) {
+            return bibleBooks.find(book => book.code === code);
+        }
+        
+        // 이름으로 책 검색
+        function getBookByName(name) {
+            return bibleBooks.find(book => book.name === name);
+        }
+        
+        // 책 코드나 이름으로 모두 검색
+        function getBook(bookInput) {
+            return getBookByCode(bookInput) || getBookByName(bookInput);
+        }
+        
+        // 성경책 버튼 초기화
+        function initializeBookButtons() {
+            bookButtons.innerHTML = '';
+            
+            for (let i = 0; i < bibleBooks.length; i++) {
+                const book = bibleBooks[i];
+                
+                // 구약과 신약 사이 간격 추가
+                if (i === 39) {
+                    const gap = document.createElement('div');
+                    gap.className = 'books-gap';
+                    bookButtons.appendChild(gap);
+                }
+                
+                const button = document.createElement('button');
+                button.textContent = book.code;
+                button.title = book.name;
+                button.disabled = true; // 초기에는 비활성화
+                button.addEventListener('click', () => {
+                    selectBook(book);
+                });
+                
+                bookButtons.appendChild(button);
+            }
+        }
+        
+        // 성경책 선택 처리
+        function selectBook(book) {
+            // 모든 책 버튼 비활성화
+            const allBookButtons = bookButtons.querySelectorAll('button');
+            allBookButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // 현재 책 버튼 활성화
+            const currentBookButton = Array.from(allBookButtons).find(btn => btn.textContent === book.code);
+            if (currentBookButton) {
+                currentBookButton.classList.add('active');
+            }
+            
+            // 현재 책 설정
+            currentBook = book.name;
+            
+            // 장 버튼 생성
+            createChapterButtons(book);
+            
+            // 1장 표시
+            displayChapter(book.name, 1);
+        }
+        
+        // 장 버튼 생성
+        function createChapterButtons(book) {
+            chapterButtons.innerHTML = '';
+            
+            const chapterCount = book.chapters;
+            const rowCount = Math.ceil(chapterCount / 5);
+            
+            for (let row = 0; row < rowCount; row++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'chapter-row';
+                
+                for (let col = 0; col < 5; col++) {
+                    const chapterNum = row * 5 + col + 1;
+                    
+                    if (chapterNum <= chapterCount) {
+                        const button = document.createElement('button');
+                        button.textContent = chapterNum;
+                        button.addEventListener('click', () => {
+                            selectChapter(book.name, chapterNum);
+                        });
+                        
+                        if (chapterNum === 1) {
+                            button.classList.add('active');
+                        }
+                        
+                        rowDiv.appendChild(button);
+                    }
+                }
+                
+                chapterButtons.appendChild(rowDiv);
+            }
+            
+            // 장 버튼 표시
+            chapterButtons.style.display = 'block';
+        }
+        
+        // 장 선택 처리
+        function selectChapter(bookName, chapter) {
+            // 모든 장 버튼 비활성화
+            const allChapterButtons = chapterButtons.querySelectorAll('button');
+            allChapterButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // 현재 장 버튼 활성화
+            const currentChapterButton = Array.from(allChapterButtons).find(btn => parseInt(btn.textContent) === chapter);
+            if (currentChapterButton) {
+                currentChapterButton.classList.add('active');
+            }
+            
+            // 장 표시
+            displayChapter(bookName, chapter);
+        }
+        
+        // 장 표시
+        function displayChapter(bookName, chapter, highlightVerses = []) {
+            currentMode = "read";
+            currentBook = bookName;
+            currentChapter = chapter;
+            
+            // 현재 상태 히스토리에 추가
+            addToHistory({ mode: currentMode, book: bookName, chapter: chapter, highlightVerses: highlightVerses });
+            
+            // 책 버튼과 장 버튼 활성화
+            updateButtonState();
+            
+            let book = getBookByName(bookName);
+            if (!book) {
+                outputContent.innerHTML = `<p>오류: ${bookName}를 찾을 수 없습니다.</p>`;
+                return;
+            }
+            
+            if (!bibleData[bookName] || !bibleData[bookName][chapter]) {
+                outputContent.innerHTML = `<p>로딩 중: ${bookName} ${chapter}장</p>`;
+                return;
+            }
+            
+            let result = `<h2 class="reference">${bookName} ${chapter}장</h2>`;
+            let verses = bibleData[bookName][chapter];
+            
+            for (let verseNum in verses) {
+                if (verses.hasOwnProperty(verseNum)) {
+                    const isHighlighted = highlightVerses.includes(parseInt(verseNum));
+                    const verseClass = isHighlighted ? 'verse-highlight' : '';
+                    result += `<p><span class="${verseClass}">${verseNum}</span> ${verses[verseNum]}</p>`;
+                }
+            }
+            
+            outputContent.innerHTML = result;
+            
+            // 대상 구절로 스크롤
+            if (highlightVerses.length > 0) {
+                const firstHighlight = document.querySelector('.verse-highlight');
+                if (firstHighlight) {
+                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            } else {
+                outputContent.scrollTop = 0;
+            }
+            
+            // 이전/다음 버튼 표시
+            updateNavigationButtons();
+        }
+        
+        // 이전/다음 버튼 상태 업데이트
+        function updateNavigationButtons() {
+            if (currentMode === "read") {
+                const book = getBookByName(currentBook);
+                if (!book) return;
+                
+                // 이전 장 버튼
+                if (currentChapter > 1) {
+                    prevBtn.style.display = 'block';
+                    prevBtn.onclick = () => {
+                        displayChapter(currentBook, currentChapter - 1);
+                    };
+                } else if (bibleBooks.indexOf(book) > 0) {
+                    // 이전 권의 마지막 장
+                    const prevBook = bibleBooks[bibleBooks.indexOf(book) - 1];
+                    prevBtn.style.display = 'block';
+                    prevBtn.onclick = () => {
+                        displayChapter(prevBook.name, prevBook.chapters);
+                    };
+                } else {
+                    prevBtn.style.display = 'none';
+                }
+                
+                // 다음 장 버튼
+                if (currentChapter < book.chapters) {
+                    nextBtn.style.display = 'block';
+                    nextBtn.onclick = () => {
+                        displayChapter(currentBook, currentChapter + 1);
+                    };
+                } else if (bibleBooks.indexOf(book) < bibleBooks.length - 1) {
+                    // 다음 권의 첫 장
+                    const nextBook = bibleBooks[bibleBooks.indexOf(book) + 1];
+                    nextBtn.style.display = 'block';
+                    nextBtn.onclick = () => {
+                        displayChapter(nextBook.name, 1);
+                    };
+                } else {
+                    nextBtn.style.display = 'none';
+                }
+            } else {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+            }
+        }
+        
+        // 버튼 상태 업데이트
+        function updateButtonState() {
+            // 모든 책 버튼 비활성화
+            const allBookButtons = bookButtons.querySelectorAll('button');
+            allBookButtons.forEach(btn => btn.classList.remove('active'));
+            
+            if (currentMode === "read") {
+                // 현재 책 버튼 활성화
+                const book = getBookByName(currentBook);
+                if (book) {
+                    const currentBookButton = Array.from(allBookButtons).find(btn => btn.textContent === book.code);
+                    if (currentBookButton) {
+                        currentBookButton.classList.add('active');
+                    }
+                }
+                
+                // 장 버튼 표시 및 활성화
+                if (book) {
+                    createChapterButtons(book);
+                    
+                    // 현재 장 버튼 활성화
+                    const allChapterButtons = chapterButtons.querySelectorAll('button');
+                    allChapterButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    const currentChapterButton = Array.from(allChapterButtons)
+                        .find(btn => parseInt(btn.textContent) === currentChapter);
+                    if (currentChapterButton) {
+                        currentChapterButton.classList.add('active');
+                    }
+                }
+            } else {
+                // 검색 모드일 때 장 버튼 숨기기
+                chapterButtons.style.display = 'none';
+            }
+        }
+        
+        // 단어 검색 함수
+        function searchWord(keyword) {
+            if (!keyword.trim()) {
+                displayEntireBible();
+                return;
+            }
+            
+            currentMode = "search";
+            updateButtonState();
+            
+            const results = [];
+            let totalOccurrences = 0;
+            
+            // 모든 책, 장, 절 검색
+            for (const bookName in bibleData) {
+                for (const chapter in bibleData[bookName]) {
+                    for (const verse in bibleData[bookName][chapter]) {
+                        const text = bibleData[bookName][chapter][verse];
+                        
+                        if (text.includes(keyword)) {
+                            const occurrences = (text.match(new RegExp(keyword, 'g')) || []).length;
+                            totalOccurrences += occurrences;
+                            
+                            results.push({
+                                book: bookName,
+                                chapter: parseInt(chapter),
+                                verse: parseInt(verse),
+                                text: text
+                            });
+                        }
+                    }
+                }
+            }
+            
+            // 결과 표시
+            displaySearchResults(keyword, results, totalOccurrences);
+        }
+        
+        // 검색 결과 표시
+        function displaySearchResults(keyword, results, totalOccurrences) {
+            // 히스토리에 추가
+            addToHistory({ mode: "search", keyword: keyword, results: results, totalOccurrences: totalOccurrences });
+            
+            let output = `<h2>${results.length}개의 구절에서 총 ${totalOccurrences}번 등장</h2>`;
+            
+            if (results.length === 0) {
+                output += `<p>검색 결과가 없습니다.</p>`;
+            } else {
+                for (const result of results) {
+                    const highlightedText = result.text.replace(new RegExp(keyword, 'g'), `<span class="highlight">${keyword}</span>`);
+                    output += `<p><span class="reference" data-book="${result.book}" data-chapter="${result.chapter}" data-verse="${result.verse}">${result.book} ${result.chapter}:${result.verse}</span><br>${highlightedText}</p>`;
+                }
+            }
+            
+            outputContent.innerHTML = output;
+            outputContent.scrollTop = 0;
+            
+            // 레퍼런스 클릭 이벤트 추가
+            const references = outputContent.querySelectorAll('.reference');
+            references.forEach(ref => {
+                ref.addEventListener('click', handleReferenceClick);
+            });
+            
+            // 이전/다음 버튼 숨기기
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+        }
+        
+        // 구절 검색 처리
+        function searchVerse(query) {
+            currentMode = "search";
+            updateButtonState();
+            
+            const references = parseReferenceQuery(query);
+            
+            if (references.length === 0) {
+                outputContent.innerHTML = `<p>검색 형식이 올바르지 않습니다. 다음과 같은 형식으로 검색해주세요:<br>예: '창 1:1', '창 1:1-3', '마 1:1,3,5', '창 1:1 마 1:1'</p>`;
+                return;
+            }
+            
+            let output = '';
+            let validReferences = [];
+            
+            for (const ref of references) {
+                const { book, chapter, verses } = ref;
+                
+                if (!bibleData[book] || !bibleData[book][chapter]) {
+                    output += `<p>오류: ${book} ${chapter}장을 찾을 수 없습니다.</p>`;
+                    continue;
+                }
+                
+                for (const verse of verses) {
+                    if (!bibleData[book][chapter][verse]) {
+                        output += `<p>오류: ${book} ${chapter}:${verse}절을 찾을 수 없습니다.</p>`;
+                        continue;
+                    }
+                    
+                    validReferences.push({
+                        book: book,
+                        chapter: parseInt(chapter),
+                        verse: parseInt(verse),
+                        text: bibleData[book][chapter][verse]
+                    });
+                }
+            }
+            
+            if (validReferences.length === 0) {
+                output = `<p>검색 결과가 없습니다.</p>`;
+            } else {
+                for (const ref of validReferences) {
+                    output += `<p><span class="reference" data-book="${ref.book}" data-chapter="${ref.chapter}" data-verse="${ref.verse}">${ref.book} ${ref.chapter}:${ref.verse}</span><br>${ref.text}</p>`;
+                }
+            }
+            
+            outputContent.innerHTML = output;
+            outputContent.scrollTop = 0;
+            
+            // 레퍼런스 클릭 이벤트 추가
+            const referenceElements = outputContent.querySelectorAll('.reference');
+            referenceElements.forEach(ref => {
+                ref.addEventListener('click', handleReferenceClick);
+            });
+            
+            // 이전/다음 버튼 숨기기
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+            
+            // 히스토리에 추가
+            addToHistory({ mode: "search", query: query, references: validReferences });
+        }
+        
+        // 구절 레퍼런스 파싱
+        function parseReferenceQuery(query) {
+            const references = [];
+            const parts = query.split(' ');
+            let currentBookName = null;
+            
+            for (let i = 0; i < parts.length; i++) {
+                const part = parts[i].trim();
+                if (!part) continue;
+                
+                // 이미 처리 중인 책이 있는 경우
+                if (currentBookName && part.includes(':') || part.includes('.')) {
+                    const chapterVerses = parseChapterVerses(part);
+                    if (chapterVerses) {
+                        references.push({
+                            book: currentBookName,
+                            chapter: chapterVerses.chapter,
+                            verses: chapterVerses.verses
+                        });
+                    }
+                    continue;
+                }
+                
+                // 새로운 책 처리
+                let book = null;
+                let remainingPart = part;
+                
+                // 책 이름 찾기
+                for (const bibleBook of bibleBooks) {
+                    if (part.startsWith(bibleBook.code) || part.startsWith(bibleBook.name)) {
+                        book = bibleBook;
+                        
+                        if (part.startsWith(bibleBook.code)) {
+                            remainingPart = part.substring(bibleBook.code.length);
+                        } else {
+                            remainingPart = part.substring(bibleBook.name.length);
+                        }
+                        
+                        break;
+                    }
+                }
+                
+                if (!book) continue;
+                
+                currentBookName = book.name;
+                
+                // 이 부분에 장:절 정보가 포함되어 있는지 확인
+                if (remainingPart.includes(':') || remainingPart.includes('.')) {
+                    const chapterVerses = parseChapterVerses(remainingPart);
+                    if (chapterVerses) {
+                        references.push({
+                            book: currentBookName,
+                            chapter: chapterVerses.chapter,
+                            verses: chapterVerses.verses
+                        });
+                        currentBookName = null;
+                    }
+                }
+            }
+            
+            return references;
+        }
+        
+        // 장:절 정보 파싱
+        function parseChapterVerses(text) {
+            let separator = text.includes(':') ? ':' : '.';
+            const parts = text.split(separator);
+            
+            if (parts.length !== 2) return null;
+            
+            const chapter = parseInt(parts[0].trim());
+            if (isNaN(chapter)) return null;
+            
+            const versePart = parts[1].trim();
+            let verses = [];
+            
+            // 연속 구절 처리 (예: 1-3)
+            if (versePart.includes('-')) {
+                const rangeParts = versePart.split('-');
+                if (rangeParts.length !== 2) return null;
+                
+                const start = parseInt(rangeParts[0].trim());
+                const end = parseInt(rangeParts[1].trim());
+                
+                if (isNaN(start) || isNaN(end) || start > end) return null;
+                
+                for (let i = start; i <= end; i++) {
+                    verses.push(i);
+                }
+            }
+            // 쉼표로 구분된 구절 처리 (예: 1,3,5)
+            else if (versePart.includes(',')) {
+                const commaParts = versePart.split(',');
+                
+                for (const part of commaParts) {
+                    const verse = parseInt(part.trim());
+                    if (!isNaN(verse)) {
+                        verses.push(verse);
+                    }
+                }
+                
+                // 중복 제거 및 오름차순 정렬
+                verses = [...new Set(verses)].sort((a, b) => a - b);
+            }
+            // 단일 구절 처리
+            else {
+                const verse = parseInt(versePart);
+                if (!isNaN(verse)) {
+                    verses.push(verse);
+                }
+            }
+            
+            return verses.length > 0 ? { chapter, verses } : null;
+        }
+        
+        // 레퍼런스 클릭 처리
+        function handleReferenceClick(event) {
+            const reference = event.target;
+            const book = reference.getAttribute('data-book');
+            const chapter = parseInt(reference.getAttribute('data-chapter'));
+            const verse = parseInt(reference.getAttribute('data-verse'));
+            
+            if (book && !isNaN(chapter)) {
+                // 읽기 모드로 전환하여 해당 장 표시
+                displayChapter(book, chapter, verse ? [verse] : []);
+            }
+        }
+        
+        // 전체 성경 표시
+        function displayEntireBible() {
+            outputContent.innerHTML = '<p>성경 전체를 출력하는 중...</p>';
+            
+            let result = '';
+            
+            for (const book of bibleBooks) {
+                for (let chapter = 1; chapter <= book.chapters; chapter++) {
+                    if (bibleData[book.name] && bibleData[book.name][chapter]) {
+                        result += `<h2 class="reference">${book.name} ${chapter}장</h2>`;
+                        
+                        for (const verse in bibleData[book.name][chapter]) {
+                            if (bibleData[book.name][chapter].hasOwnProperty(verse)) {
+                                result += `<p><span>${verse}</span> ${bibleData[book.name][chapter][verse]}</p>`;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            outputContent.innerHTML = result;
+            outputContent.scrollTop = 0;
+            
+            // 히스토리에 추가
+            addToHistory({ mode: "fullBible" });
+        }
+        
+        // 검색 처리
+        function handleSearch() {
+            const query = searchInput.value.trim();
+            
+            if (!query) {
+                displayEntireBible();
+                return;
+            }
+            
+            // 구절 검색인지 단어 검색인지 결정
+            const isVerseSearch = isVerseQuery(query);
+            
+            if (isVerseSearch) {
+                searchVerse(query);
+            } else {
+                searchWord(query);
+            }
+        }
+        
+        // 구절 검색 쿼리인지 확인
+        function isVerseQuery(query) {
+            // 책 이름이 포함되어 있고, 숫자:숫자 패턴이 있는지 확인
+            const hasBookName = bibleBooks.some(book => 
+                query.includes(book.code) || query.includes(book.name)
+            );
+            
+            const hasChapterVerse = query.includes(':') || query.includes('.');
+            
+            return hasBookName && hasChapterVerse;
+        }
+        
+        // 복사 기능
+        function copyOutput() {
+            let content = '';
+            const paragraphs = outputContent.querySelectorAll('p');
+            
+            // 최상단 제목(검색 결과 수) 제외
+            if (currentMode === "search" && outputContent.querySelector('h2')) {
+                // 바로 p 태그들만 복사
+                paragraphs.forEach(p => {
+                    content += p.textContent + '\n';
+                });
+            } else {
+                // 읽기 모드는 제목 포함해서 복사
+                const title = outputContent.querySelector('h2');
+                if (title) {
+                    content += title.textContent + '\n';
+                }
+                
+                paragraphs.forEach(p => {
+                    content += p.textContent + '\n';
+                });
+            }
+            
+            // 클립보드에 복사
+            navigator.clipboard.writeText(content.trim())
+                .then(() => {
+                    alert('내용이 클립보드에 복사되었습니다.');
+                })
+                .catch(err => {
+                    console.error('복사 실패:', err);
+                    alert('복사에 실패했습니다.');
+                });
+        }
+        
+        // 히스토리 관리
+        function addToHistory(state) {
+            // 현재 인덱스 이후의 히스토리 삭제
+            if (currentHistoryIndex < historyStack.length - 1) {
+                historyStack = historyStack.slice(0, currentHistoryIndex + 1);
+            }
+            
+            historyStack.push(state);
+            currentHistoryIndex = historyStack.length - 1;
+        }
+        
+        // 뒤로 가기
+        function goBack() {
+            if (currentHistoryIndex > 0) {
+                currentHistoryIndex--;
+                applyHistoryState(historyStack[currentHistoryIndex]);
+            }
+        }
+        
+        // 앞으로 가기
+        function goForward() {
+            if (currentHistoryIndex < historyStack.length - 1) {
+                currentHistoryIndex++;
+                applyHistoryState(historyStack[currentHistoryIndex]);
+            }
+        }
+        
+        // 히스토리 상태 적용
+        function applyHistoryState(state) {
+            if (!state) return;
+            
+            if (state.mode === "read") {
+                displayChapter(state.book, state.chapter, state.highlightVerses || []);
+            } else if (state.mode === "search") {
+                if (state.keyword) {
+                    // 단어 검색
+                    displaySearchResults(state.keyword, state.results, state.totalOccurrences);
+                } else if (state.query) {
+                    // 구절 검색
+                    outputContent.innerHTML = '';
+                    
+                    for (const ref of state.references) {
+                        outputContent.innerHTML += `<p><span class="reference" data-book="${ref.book}" data-chapter="${ref.chapter}" data-verse="${ref.verse}">${ref.book} ${ref.chapter}:${ref.verse}</span><br>${ref.text}</p>`;
+                    }
+                    
+                    // 레퍼런스 클릭 이벤트 추가
+                    const referenceElements = outputContent.querySelectorAll('.reference');
+                    referenceElements.forEach(ref => {
+                        ref.addEventListener('click', handleReferenceClick);
+                    });
+                }
+            } else if (state.mode === "fullBible") {
+                displayEntireBible();
+            }
+            
+            currentMode = state.mode;
+            updateButtonState();
+        }
+        
+        // 성경 데이터 가져오기
+        async function fetchBibleData() {
+            try {
+                // 여기서 JSON 파일 경로를 지정합니다
+                // 실제 배포 시 이 URL을 실제 JSON 파일 경로로 변경해야 합니다
+                const response = await fetch('/bible/korean-kjv.json');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP 오류: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('성경 데이터 로드 오류:', error);
+                throw error;
+            }
+        }
+        
+        // 초기화 및 이벤트 리스너
+        async function initialize() {
+            // 성경책 버튼 초기화
+            initializeBookButtons();
+            
+            try {
+                // 성경 데이터 불러오기
+                bibleData = await fetchBibleData();
+                
+                // 로딩 메시지 제거 및 UI 활성화
+                outputContent.innerHTML = '<p>검색어를 입력하거나 왼쪽의 성경책을 선택하세요.</p>';
+                
+                // 검색 UI 활성화
+                searchInput.disabled = false;
+                searchBtn.disabled = false;
+                copyBtn.disabled = false;
+                
+                // 책 버튼 활성화
+                const bookBtns = bookButtons.querySelectorAll('button');
+                bookBtns.forEach(btn => btn.disabled = false);
+                
+            } catch (error) {
+                outputContent.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <p>성경 데이터를 불러오는데 실패했습니다.</p>
+                        <p>오류 메시지: ${error.message}</p>
+                        <button id="retry-btn" style="margin-top: 15px; padding: 10px 15px;">다시 시도</button>
+                    </div>
+                `;
+                
+                document.getElementById('retry-btn').addEventListener('click', initialize);
+                return;
+            }
+            
+            // 검색 버튼 클릭 이벤트
+            searchBtn.addEventListener('click', handleSearch);
+            
+            // 엔터키 검색
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleSearch();
+                }
+            });
+            
+            // 복사 버튼 클릭 이벤트
+            copyBtn.addEventListener('click', copyOutput);
+            
+            // 키보드 이벤트
+            document.addEventListener('keydown', function(e) {
+                // Ctrl+Z 뒤로 가기
+                if (e.ctrlKey && e.key === 'z') {
+                    e.preventDefault();
+                    goBack();
+                }
+                
+                // 방향키 이전/다음 페이지
+                if (currentMode === "read") {
+                    if (e.key === 'ArrowLeft') {
+                        if (prevBtn.style.display !== 'none') {
+                            prevBtn.click();
+                        }
+                    } else if (e.key === 'ArrowRight') {
+                        if (nextBtn.style.display !== 'none') {
+                            nextBtn.click();
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 초기화 실행
+        initialize();
+                <!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한글킹제임스성경 검색기</title>
+    <style>
+        @font-face {
+            font-family: 'GmarketSansMedium';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'GmarketSansMedium', sans-serif;
+        }
+        
+        body {
+            display: flex;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background-color: #f0f0f0;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .book-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .books-gap {
+            grid-column: 1 / span 3;
+            height: 10px;
+        }
+        
+        .chapter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .chapter-row {
+            display: flex;
+            width: 100%;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        
+        button {
+            padding: 5px;
+            background-color: #e0e0e0;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background-color: #d0d0d0;
+        }
+        
+        button.active {
+            background-color: #bbb;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .search-container {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        
+        .search-btn, .copy-btn {
+            padding: 10px 15px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .output-container {
+            flex: 1;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background-color: white;
+            padding: 15px;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .output-content {
+            white-space: pre-wrap;
+            user-select: text;
+            cursor: text;
+        }
+        
+        .output-content p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .reference {
+            color: #4285f4;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .highlight {
+            background-color: yellow;
+        }
+        
+        .verse-highlight {
+            background-color: yellow;
+            font-weight: bold;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        
+        .nav-btn {
+            padding: 8px 15px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .history-stack {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="book-buttons">
+            <!-- 성경 권 버튼들이 여기에 동적으로 추가됨 -->
+        </div>
+        <div class="chapter-buttons">
+            <!-- 장 버튼들이 여기에 동적으로 추가됨 -->
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="header">
+            <h1>한글킹제임스성경 검색기</h1>
+        </div>
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="검색어나 성경 구절을 입력하세요 (예: '하나님' 또는 '창 1:1')">
+            <button class="search-btn">검색</button>
+            <button class="copy-btn">복사</button>
+        </div>
+        <div class="output-container">
+            <div class="output-content"></div>
+            <div class="navigation">
+                <button class="nav-btn prev-btn" style="display: none;">이전</button>
+                <button class="nav-btn next-btn" style="display: none;">다음</button>
+            </div>
+        </div>
+    </div>
+    <div class="history-stack"></div>
+
+    <script>
+        // 성경 데이터 구조
+        let bibleData = {};
+        
+        // 현재 상태 관리
+        let currentMode = ""; // "read" 또는 "search"
+        let currentBook = "";
+        let currentChapter = 0;
+        let historyStack = [];
+        let currentHistoryIndex = -1;
+        
+        // DOM 요소
+        const sidebar = document.querySelector('.sidebar');
+        const bookButtons = document.querySelector('.book-buttons');
+        const chapterButtons = document.querySelector('.chapter-buttons');
+        const searchInput = document.querySelector('.search-input');
+        const searchBtn = document.querySelector('.search-btn');
+        const copyBtn = document.querySelector('.copy-btn');
+        const outputContent = document.querySelector('.output-content');
+        const prevBtn = document.querySelector('.prev-btn');
+        const nextBtn = document.querySelector('.next-btn');
+        
+        // 성경책 정보
+        const bibleBooks = [
+            // 구약
+            {code: "창", name: "창세기", chapters: 50},
+            {code: "출", name: "출애굽기", chapters: 40},
+            {code: "레", name: "레위기", chapters: 27},
+            {code: "민", name: "민수기", chapters: 36},
+            {code: "신", name: "신명기", chapters: 34},
+            {code: "수", name: "여호수아", chapters: 24},
+            {code: "판", name: "재판관기", chapters: 21},
+            {code: "룻", name: "룻기", chapters: 4},
+            {code: "삼상", name: "사무엘상", chapters: 31},
+            {code: "삼하", name: "사무엘하", chapters: 24},
+            {code: "왕상", name: "열왕기상", chapters: 22},
+            {code: "왕하", name: "열왕기하", chapters: 25},
+            {code: "대상", name: "역대기상", chapters: 29},
+            {code: "대하", name: "역대기하", chapters: 36},
+            {code: "스", name: "에스라", chapters: 10},
+            {code: "느", name: "느헤미야", chapters: 13},
+            {code: "에", name: "에스더", chapters: 10},
+            {code: "욥", name: "욥기", chapters: 42},
+            {code: "시", name: "시편", chapters: 150},
+            {code: "잠", name: "잠언", chapters: 31},
+            {code: "전", name: "전도서", chapters: 12},
+            {code: "솔", name: "솔로몬의 노래", chapters: 8},
+            {code: "사", name: "이사야", chapters: 66},
+            {code: "렘", name: "예레미야", chapters: 52},
+            {code: "애", name: "예레미야애가", chapters: 5},
+            {code: "겔", name: "에스겔", chapters: 48},
+            {code: "단", name: "다니엘", chapters: 12},
+            {code: "호", name: "호세아", chapters: 14},
+            {code: "욜", name: "요엘", chapters: 3},
+            {code: "암", name: "아모스", chapters: 9},
+            {code: "옵", name: "오바댜", chapters: 1},
+            {code: "욘", name: "요나", chapters: 4},
+            {code: "미", name: "미가", chapters: 7},
+            {code: "나", name: "나훔", chapters: 3},
+            {code: "합", name: "하박국", chapters: 3},
+            {code: "슾", name: "스파냐", chapters: 3},
+            {code: "학", name: "학개", chapters: 2},
+            {code: "슼", name: "스카랴", chapters: 14},
+            {code: "말", name: "말라키", chapters: 4},
+            // 신약
+            {code: "마", name: "마태복음", chapters: 28},
+            {code: "막", name: "마가복음", chapters: 16},
+            {code: "눅", name: "누가복음", chapters: 24},
+            {code: "요", name: "요한복음", chapters: 21},
+            {code: "행", name: "사도행전", chapters: 28},
+            {code: "롬", name: "로마서", chapters: 16},
+            {code: "고전", name: "고린도전서", chapters: 16},
+            {code: "고후", name: "고린도후서", chapters: 13},
+            {code: "갈", name: "갈라디아서", chapters: 6},
+            {code: "엡", name: "에베소서", chapters: 6},
+            {code: "빌", name: "빌립보서", chapters: 4},
+            {code: "골", name: "골로새서", chapters: 4},
+            {code: "살전", name: "데살로니가전서", chapters: 5},
+            {code: "살후", name: "데살로니가후서", chapters: 3},
+            {code: "딤전", name: "디모데전서", chapters: 6},
+            {code: "딤후", name: "디모데후서", chapters: 4},
+            {code: "딛", name: "디도서", chapters: 3},
+            {code: "몬", name: "빌레몬서", chapters: 1},
+            {code: "히", name: "히브리서", chapters: 13},
+            {code: "약", name: "야고보서", chapters: 5},
+            {code: "벧전", name: "베드로전서", chapters: 5},
+            {code: "벧후", name: "베드로후서", chapters: 3},
+            {code: "요일", name: "요한일서", chapters: 5},
+            {code: "요이", name: "요한이서", chapters: 1},
+            {code: "요삼", name: "요한삼서", chapters: 1},
+            {code: "유", name: "유다서", chapters: 1},
+            {code: "계", name: "요한계시록", chapters: 22}
+        ];
+        
+        // 코드로 책 검색
+        function getBookByCode(code) {
+            return bibleBooks.find(book => book.code === code);
+        }
+        
+        // 이름으로 책 검색
+        function getBookByName(name) {
+            return bibleBooks.find(book => book.name === name);
+        }
+        
+        // 책 코드나 이름으로 모두 검색
+        function getBook(bookInput) {
+            return getBookByCode(bookInput) || getBookByName(bookInput);
+        }
+        
+        // 성경책 버튼 초기화
+        function initializeBookButtons() {
+            bookButtons.innerHTML = '';
+            
+            for (let i = 0; i < bibleBooks.length; i++) {
+                const book = bibleBooks[i];
+                
+                // 구약과 신약 사이 간격 추가
+                if (i === 39) {
+                    const gap = document.createElement('div');
+                    gap.className = 'books-gap';
+                    bookButtons.appendChild(gap);
+                }
+                
+                const button = document.createElement('button');
+                button.textContent = book.code;
+                button.title = book.name;
+                button.addEventListener('click', () => {
+                    selectBook(book);
+                });
+                
+                bookButtons.appendChild(button);
+            }
+        }
+        
+        // 성경책 선택 처리
+        function selectBook(book) {
+            // 모든 책 버튼 비활성화
+            const allBookButtons = bookButtons.querySelectorAll('button');
+            allBookButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // 현재 책 버튼 활성화
+            const currentBookButton = Array.from(allBookButtons).find(btn => btn.textContent === book.code);
+            if (currentBookButton) {
+                currentBookButton.classList.add('active');
+            }
+            
+            // 현재 책 설정
+            currentBook = book.name;
+            
+            // 장 버튼 생성
+            createChapterButtons(book);
+            
+            // 1장 표시
+            displayChapter(book.name, 1);
+        }
+        
+        // 장 버튼 생성
+        function createChapterButtons(book) {
+            chapterButtons.innerHTML = '';
+            
+            const chapterCount = book.chapters;
+            const rowCount = Math.ceil(chapterCount / 5);
+            
+            for (let row = 0; row < rowCount; row++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'chapter-row';
+                
+                for (let col = 0; col < 5; col++) {
+                    const chapterNum = row * 5 + col + 1;
+                    
+                    if (chapterNum <= chapterCount) {
+                        const button = document.createElement('button');
+                        button.textContent = chapterNum;
+                        button.addEventListener('click', () => {
+                            selectChapter(book.name, chapterNum);
+                        });
+                        
+                        if (chapterNum === 1) {
+                            button.classList.add('active');
+                        }
+                        
+                        rowDiv.appendChild(button);
+                    }
+                }
+                
+                chapterButtons.appendChild(rowDiv);
+            }
+            
+            // 장 버튼 표시
+            chapterButtons.style.display = 'block';
+        }
+        
+        // 장 선택 처리
+        function selectChapter(bookName, chapter) {
+            // 모든 장 버튼 비활성화
+            const allChapterButtons = chapterButtons.querySelectorAll('button');
+            allChapterButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // 현재 장 버튼 활성화
+            const currentChapterButton = Array.from(allChapterButtons).find(btn => parseInt(btn.textContent) === chapter);
+            if (currentChapterButton) {
+                currentChapterButton.classList.add('active');
+            }
+            
+            // 장 표시
+            displayChapter(bookName, chapter);
+        }
+        
+        // 장 표시
+        function displayChapter(bookName, chapter, highlightVerses = []) {
+            currentMode = "read";
+            currentBook = bookName;
+            currentChapter = chapter;
+            
+            // 현재 상태 히스토리에 추가
+            addToHistory({ mode: currentMode, book: bookName, chapter: chapter, highlightVerses: highlightVerses });
+            
+            // 책 버튼과 장 버튼 활성화
+            updateButtonState();
+            
+            let book = getBookByName(bookName);
+            if (!book) {
+                outputContent.innerHTML = `<p>오류: ${bookName}를 찾을 수 없습니다.</p>`;
+                return;
+            }
+            
+            if (!bibleData[bookName] || !bibleData[bookName][chapter]) {
+                outputContent.innerHTML = `<p>로딩 중: ${bookName} ${chapter}장</p>`;
+                return;
+            }
+            
+            let result = `<h2 class="reference">${bookName} ${chapter}장</h2>`;
+            let verses = bibleData[bookName][chapter];
+            
+            for (let verseNum in verses) {
+                if (verses.hasOwnProperty(verseNum)) {
+                    const isHighlighted = highlightVerses.includes(parseInt(verseNum));
+                    const verseClass = isHighlighted ? 'verse-highlight' : '';
+                    result += `<p><span class="${verseClass}">${verseNum}</span> ${verses[verseNum]}</p>`;
+                }
+            }
+            
+            outputContent.innerHTML = result;
+            
+            // 대상 구절로 스크롤
+            if (highlightVerses.length > 0) {
+                const firstHighlight = document.querySelector('.verse-highlight');
+                if (firstHighlight) {
+                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            } else {
+                outputContent.scrollTop = 0;
+            }
+            
+            // 이전/다음 버튼 표시
+            updateNavigationButtons();
+        }
+        
+        // 이전/다음 버튼 상태 업데이트
+        function updateNavigationButtons() {
+            if (currentMode === "read") {
+                const book = getBookByName(currentBook);
+                if (!book) return;
+                
+                // 이전 장 버튼
+                if (currentChapter > 1) {
+                    prevBtn.style.display = 'block';
+                    prevBtn.onclick = () => {
+                        displayChapter(currentBook, currentChapter - 1);
+                    };
+                } else if (bibleBooks.indexOf(book) > 0) {
+                    // 이전 권의 마지막 장
+                    const prevBook = bibleBooks[bibleBooks.indexOf(book) - 1];
+                    prevBtn.style.display = 'block';
+                    prevBtn.onclick = () => {
+                        displayChapter(prevBook.name, prevBook.chapters);
+                    };
+                } else {
+                    prevBtn.style.display = 'none';
+                }
+                
+                // 다음 장 버튼
+                if (currentChapter < book.chapters) {
+                    nextBtn.style.display = 'block';
+                    nextBtn.onclick = () => {
+                        displayChapter(currentBook, currentChapter + 1);
+                    };
+                } else if (bibleBooks.indexOf(book) < bibleBooks.length - 1) {
+                    // 다음 권의 첫 장
+                    const nextBook = bibleBooks[bibleBooks.indexOf(book) + 1];
+                    nextBtn.style.display = 'block';
+                    nextBtn.onclick = () => {
+                        displayChapter(nextBook.name, 1);
+                    };
+                } else {
+                    nextBtn.style.display = 'none';
+                }
+            } else {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+            }
+        }
+        
+        // 버튼 상태 업데이트
+        function updateButtonState() {
+            // 모든 책 버튼 비활성화
+            const allBookButtons = bookButtons.querySelectorAll('button');
+            allBookButtons.forEach(btn => btn.classList.remove('active'));
+            
+            if (currentMode === "read") {
+                // 현재 책 버튼 활성화
+                const book = getBookByName(currentBook);
+                if (book) {
+                    const currentBookButton = Array.from(allBookButtons).find(btn => btn.textContent === book.code);
+                    if (currentBookButton) {
+                        currentBookButton.classList.add('active');
+                    }
+                }
+                
+                // 장 버튼 표시 및 활성화
+                if (book) {
+                    createChapterButtons(book);
+                    
+                    // 현재 장 버튼 활성화
+                    const allChapterButtons = chapterButtons.querySelectorAll('button');
+                    allChapterButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    const currentChapterButton = Array.from(allChapterButtons)
+                        .find(btn => parseInt(btn.textContent) === currentChapter);
+                    if (currentChapterButton) {
+                        currentChapterButton.classList.add('active');
+                    }
+                }
+            } else {
+                // 검색 모드일 때 장 버튼 숨기기
+                chapterButtons.style.display = 'none';
+            }
+        }
+        
+        // 단어 검색 함수
+        function searchWord(keyword) {
+            if (!keyword.trim()) {
+                displayEntireBible();
+                return;
+            }
+            
+            currentMode = "search";
+            updateButtonState();
+            
+            const results = [];
+            let totalOccurrences = 0;
+            
+            // 모든 책, 장, 절 검색
+            for (const bookName in bibleData) {
+                for (const chapter in bibleData[bookName]) {
+                    for (const verse in bibleData[bookName][chapter]) {
+                        const text = bibleData[bookName][chapter][verse];
+                        
+                        if (text.includes(keyword)) {
+                            const occurrences = (text.match(new RegExp(keyword, 'g')) || []).length;
+                            totalOccurrences += occurrences;
+                            
+                            results.push({
+                                book: bookName,
+                                chapter: parseInt(chapter),
+                                verse: parseInt(verse),
+                                text: text
+                            });
+                        }
+                    }
+                }
+            }
+            
+            // 결과 표시
+            displaySearchResults(keyword, results, totalOccurrences);
+        }
+        
+        // 검색 결과 표시
+        function displaySearchResults(keyword, results, totalOccurrences) {
+            // 히스토리에 추가
+            addToHistory({ mode: "search", keyword: keyword, results: results, totalOccurrences: totalOccurrences });
+            
+            let output = `<h2>${results.length}개의 구절에서 총 ${totalOccurrences}번 등장</h2>`;
+            
+            if (results.length === 0) {
+                output += `<p>검색 결과가 없습니다.</p>`;
+            } else {
+                for (const result of results) {
+                    const highlightedText = result.text.replace(new RegExp(keyword, 'g'), `<span class="highlight">${keyword}</span>`);
+                    output += `<p><span class="reference" data-book="${result.book}" data-chapter="${result.chapter}" data-verse="${result.verse}">${result.book} ${result.chapter}:${result.verse}</span><br>${highlightedText}</p>`;
+                }
+            }
+            
+            outputContent.innerHTML = output;
+            outputContent.scrollTop = 0;
+            
+            // 레퍼런스 클릭 이벤트 추가
+            const references = outputContent.querySelectorAll('.reference');
+            references.forEach(ref => {
+                ref.addEventListener('click', handleReferenceClick);
+            });
+            
+            // 이전/다음 버튼 숨기기
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+        }
+        
+        // 구절 검색 처리
+        function searchVerse(query) {
+            currentMode = "search";
+            updateButtonState();
+            
+            const references = parseReferenceQuery(query);
+            
+            if (references.length === 0) {
+                outputContent.innerHTML = `<p>검색 형식이 올바르지 않습니다. 다음과 같은 형식으로 검색해주세요:<br>예: '창 1:1', '창 1:1-3', '마 1:1,3,5', '창 1:1 마 1:1'</p>`;
+                return;
+            }
+            
+            let output = '';
+            let validReferences = [];
+            
+            for (const ref of references) {
+                const { book, chapter, verses } = ref;
+                
+                if (!bibleData[book] || !bibleData[book][chapter]) {
+                    output += `<p>오류: ${book} ${chapter}장을 찾을 수 없습니다.</p>`;
+                    continue;
+                }
+                
+                for (const verse of verses) {
+                    if (!bibleData[book][chapter][verse]) {
+                        output += `<p>오류: ${book} ${chapter}:${verse}절을 찾을 수 없습니다.</p>`;
+                        continue;
+                    }
+                    
+                    validReferences.push({
+                        book: book,
+                        chapter: parseInt(chapter),
+                        verse: parseInt(verse),
+                        text: bibleData[book][chapter][verse]
+                    });
+                }
+            }
+            
+            if (validReferences.length === 0) {
+                output = `<p>검색 결과가 없습니다.</p>`;
+            } else {
+                for (const ref of validReferences) {
+                    output += `<p><span class="reference" data-book="${ref.book}" data-chapter="${ref.chapter}" data-verse="${ref.verse}">${ref.book} ${ref.chapter}:${ref.verse}</span><br>${ref.text}</p>`;
+                }
+            }
+            
+            outputContent.innerHTML = output;
+            outputContent.scrollTop = 0;
+            
+            // 레퍼런스 클릭 이벤트 추가
+            const referenceElements = outputContent.querySelectorAll('.reference');
+            referenceElements.forEach(ref => {
+                ref.addEventListener('click', handleReferenceClick);
+            });
+            
+            // 이전/다음 버튼 숨기기
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+            
+            // 히스토리에 추가
+            addToHistory({ mode: "search", query: query, references: validReferences });
+        }
+        
+        // 구절 레퍼런스 파싱
+        function parseReferenceQuery(query) {
+            const references = [];
+            const parts = query.split(' ');
+            let currentBookName = null;
+            
+            for (let i = 0; i < parts.length; i++) {
+                const part = parts[i].trim();
+                if (!part) continue;
+                
+                // 이미 처리 중인 책이 있는 경우
+                if (currentBookName && part.includes(':') || part.includes('.')) {
+                    const chapterVerses = parseChapterVerses(part);
+                    if (chapterVerses) {
+                        references.push({
+                            book: currentBookName,
+                            chapter: chapterVerses.chapter,
+                            verses: chapterVerses.verses
+                        });
+                    }
+                    continue;
+                }
+                
+                // 새로운 책 처리
+                let book = null;
+                let remainingPart = part;
+                
+                // 책 이름 찾기
+                for (const bibleBook of bibleBooks) {
+                    if (part.startsWith(bibleBook.code) || part.startsWith(bibleBook.name)) {
+                        book = bibleBook;
+                        
+                        if (part.startsWith(bibleBook.code)) {
+                            remainingPart = part.substring(bibleBook.code.length);
+                        } else {
+                            remainingPart = part.substring(bibleBook.name.length);
+                        }
+                        
+                        break;
+                    }
+                }
+                
+                if (!book) continue;
+                
+                currentBookName = book.name;
+                
+                // 이 부분에 장:절 정보가 포함되어 있는지 확인
+                if (remainingPart.includes(':') || remainingPart.includes('.')) {
+                    const chapterVerses = parseChapterVerses(remainingPart);
+                    if (chapterVerses) {
+                        references.push({
+                            book: currentBookName,
+                            chapter: chapterVerses.chapter,
+                            verses: chapterVerses.verses
+                        });
+                        currentBookName = null;
+                    }
+                }
+            }
+            
+            return references;
+        }
+        
+        // 장:절 정보 파싱
+        function parseChapterVerses(text) {
+            let separator = text.includes(':') ? ':' : '.';
+            const parts = text.split(separator);
+            
+            if (parts.length !== 2) return null;
+            
+            const chapter = parseInt(parts[0].trim());
+            if (isNaN(chapter)) return null;
+            
+            const versePart = parts[1].trim();
+            let verses = [];
+            
+            // 연속 구절 처리 (예: 1-3)
+            if (versePart.includes('-')) {
+                const rangeParts = versePart.split('-');
+                if (rangeParts.length !== 2) return null;
+                
+                const start = parseInt(rangeParts[0].trim());
+                const end = parseInt(rangeParts[1].trim());
+                
+                if (isNaN(start) || isNaN(end) || start > end) return null;
+                
+                for (let i = start; i <= end; i++) {
+                    verses.push(i);
+                }
+            }
+            // 쉼표로 구분된 구절 처리 (예: 1,3,5)
+            else if (versePart.includes(',')) {
+                const commaParts = versePart.split(',');
+                
+                for (const part of commaParts) {
+                    const verse = parseInt(part.trim());
+                    if (!isNaN(verse)) {
+                        verses.push(verse);
+                    }
+                }
+                
+                // 중복 제거 및 오름차순 정렬
+                verses = [...new Set(verses)].sort((a, b) => a - b);
+            }
+            // 단일 구절 처리
+            else {
+                const verse = parseInt(versePart);
+                if (!isNaN(verse)) {
+                    verses.push(verse);
+                }
+            }
+            
+            return verses.length > 0 ? { chapter, verses } : null;
+        }
+        
+        // 레퍼런스 클릭 처리
+        function handleReferenceClick(event) {
+            const reference = event.target;
+            const book = reference.getAttribute('data-book');
+            const chapter = parseInt(reference.getAttribute('data-chapter'));
+            const verse = parseInt(reference.getAttribute('data-verse'));
+            
+            if (book && !isNaN(chapter)) {
+                // 읽기 모드로 전환하여 해당 장 표시
+                displayChapter(book, chapter, verse ? [verse] : []);
+            }
+        }
+        
+        // 전체 성경 표시
+        function displayEntireBible() {
+            outputContent.innerHTML = '<p>성경 전체를 출력하는 중...</p>';
+            
+            let result = '';
+            
+            for (const book of bibleBooks) {
+                for (let chapter = 1; chapter <= book.chapters; chapter++) {
+                    if (bibleData[book.name] && bibleData[book.name][chapter]) {
+                        result += `<h2 class="reference">${book.name} ${chapter}장</h2>`;
+                        
+                        for (const verse in bibleData[book.name][chapter]) {
+                            if (bibleData[book.name][chapter].hasOwnProperty(verse)) {
+                                result += `<p><span>${verse}</span> ${bibleData[book.name][chapter][verse]}</p>`;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            outputContent.innerHTML = result;
+            outputContent.scrollTop = 0;
+            
+            // 히스토리에 추가
+            addToHistory({ mode: "fullBible" });
+        }
+        
+        // 검색 처리
+        function handleSearch() {
+            const query = searchInput.value.trim();
+            
+            if (!query) {
+                displayEntireBible();
+                return;
+            }
+            
+            // 구절 검색인지 단어 검색인지 결정
+            const isVerseSearch = isVerseQuery(query);
+            
+            if (isVerseSearch) {
+                searchVerse(query);
+            } else {
+                searchWord(query);
+            }
+        }
+        
+        // 구절 검색 쿼리인지 확인
+        function isVerseQuery(query) {
+            // 책 이름이 포함되어 있고, 숫자:숫자 패턴이 있는지 확인
+            const hasBookName = bibleBooks.some(book => 
+                query.includes(book.code) || query.includes(book.name)
+            );
+            
+            const hasChapterVerse = query.includes(':') || query.includes('.');
+            
+            return hasBookName && hasChapterVerse;
+        }
+        
+        // 복사 기능
+        function copyOutput() {
+            let content = '';
+            const paragraphs = outputContent.querySelectorAll('p');
+            
+            // 최상단 제목(검색 결과 수) 제외
+            if (currentMode === "search" && outputContent.querySelector('h2')) {
+                // 바로 p 태그들만 복사
+                paragraphs.forEach(p => {
+                    content += p.textContent + '\n';
+                });
+            } else {
+                // 읽기 모드는 제목 포함해서 복사
+                const title = outputContent.querySelector('h2');
+                if (title) {
+                    content += title.textContent + '\n';
+                }
+                
+                paragraphs.forEach(p => {
+                    content += p.textContent + '\n';
+                });
+            }
+            
+            // 클립보드에 복사
+            navigator.clipboard.writeText(content.trim())
+                .then(() => {
+                    alert('내용이 클립보드에 복사되었습니다.');
+                })
+                .catch(err => {
+                    console.error('복사 실패:', err);
+                    alert('복사에 실패했습니다.');
+                });
+        }
+        
+        // 성경 데이터 파싱 함수
+        async function parseBibleData(text) {
+            try {
+                const lines = text.split('\n');
+                const data = {};
+                
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine) continue;
+                    
+                    // 정규식: "책이름 장:절 본문" 패턴 추출
+                    const match = trimmedLine.match(/^(.+) (\d+):(\d+) (.+)$/);
+                    
+                    if (match) {
+                        const [_, bookName, chapter, verse, verseText] = match;
+                        
+                        if (!data[bookName]) {
+                            data[bookName] = {};
+                        }
+                        
+                        if (!data[bookName][chapter]) {
+                            data[bookName][chapter] = {};
+                        }
+                        
+                        data[bookName][chapter][verse] = verseText;
+                    }
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('성경 데이터 파싱 오류:', error);
+                return null;
+            }
+        }
+        
+        // 히스토리 관리
+        function addToHistory(state) {
+            // 현재 인덱스 이후의 히스토리 삭제
+            if (currentHistoryIndex < historyStack.length - 1) {
+                historyStack = historyStack.slice(0, currentHistoryIndex + 1);
+            }
+            
+            historyStack.push(state);
+            currentHistoryIndex = historyStack.length - 1;
+            
+            // 히스토리 디버깅
+            // console.log('History:', historyStack);
+        }
+        
+        // 뒤로 가기
+        function goBack() {
+            if (currentHistoryIndex > 0) {
+                currentHistoryIndex--;
+                applyHistoryState(historyStack[currentHistoryIndex]);
+            }
+        }
+        
+        // 앞으로 가기
+        function goForward() {
+            if (currentHistoryIndex < historyStack.length - 1) {
+                currentHistoryIndex++;
+                applyHistoryState(historyStack[currentHistoryIndex]);
+            }
+        }
+        
+        // 히스토리 상태 적용
+        function applyHistoryState(state) {
+            if (!state) return;
+            
+            if (state.mode === "read") {
+                displayChapter(state.book, state.chapter, state.highlightVerses || []);
+            } else if (state.mode === "search") {
+                if (state.keyword) {
+                    // 단어 검색
+                    displaySearchResults(state.keyword, state.results, state.totalOccurrences);
+                } else if (state.query) {
+                    // 구절 검색
+                    outputContent.innerHTML = '';
+                    
+                    for (const ref of state.references) {
+                        outputContent.innerHTML += `<p><span class="reference" data-book="${ref.book}" data-chapter="${ref.chapter}" data-verse="${ref.verse}">${ref.book} ${ref.chapter}:${ref.verse}</span><br>${ref.text}</p>`;
+                    }
+                    
+                    // 레퍼런스 클릭 이벤트 추가
+                    const referenceElements = outputContent.querySelectorAll('.reference');
+                    referenceElements.forEach(ref => {
+                        ref.addEventListener('click', handleReferenceClick);
+                    });
+                }
+            } else if (state.mode === "fullBible") {
+                displayEntireBible();
+            }
+            
+            currentMode = state.mode;
+            updateButtonState();
+        }
+        
+        // 초기화 및 이벤트 리스너
+        async function initialize() {
+            // 성경책 버튼 초기화
+            initializeBookButtons();
+            
+            // 한글킹제임스성경 파싱
+            try {
+                const exampleData = `창세기 1:1 태초에 하나님께서 하늘과 땅을 창조하셨느니라.
+창세기 1:2 땅은 형체가 없고 공허하며 어두움이 깊음의 표면에 있으며 하나님의 영은 물들의 표면에서 거니시더라.
+창세기 1:3 하나님께서 말씀하시기를 "빛이 있으라." 하시니, 빛이 있더라.`;
+                
+                // 실제 구현 시에는 파일이나 API에서 전체 성경 데이터를 불러와야 함
+                bibleData = await parseBibleData(exampleData);
+                
+                // 첫 페이지 표시
+                outputContent.innerHTML = `<p>검색어를 입력하거나 왼쪽의 성경책을 선택하세요.</p>`;
+            } catch (error) {
+                console.error('초기화 오류:', error);
+                outputContent.innerHTML = `<p>성경 데이터 로드 중 오류가 발생했습니다: ${error.message}</p>`;
+            }
+            
+            // 검색 버튼 클릭 이벤트
+            searchBtn.addEventListener('click', handleSearch);
+            
+            // 엔터키 검색
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleSearch();
+                }
+            });
+            
+            // 복사 버튼 클릭 이벤트
+            copyBtn.addEventListener('click', copyOutput);
+            
+            // 키보드 이벤트
+            document.addEventListener('keydown', function(e) {
+                // Ctrl+Z 뒤로 가기
+                if (e.ctrlKey && e.key === 'z') {
+                    e.preventDefault();
+                    goBack();
+                }
+                
+                // 방향키 이전/다음 페이지
+                if (currentMode === "read") {
+                    if (e.key === 'ArrowLeft') {
+                        if (prevBtn.style.display !== 'none') {
+                            prevBtn.click();
+                        }
+                    } else if (e.key === 'ArrowRight') {
+                        if (nextBtn.style.display !== 'none') {
+                            nextBtn.click();
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 초기화 실행
+        initialize();
